@@ -23,7 +23,7 @@ function checkRequestType() {
   }
 }
 
-function checkRelease(octokit) {
+async function checkRelease(octokit) {
   const release = core.getInput('release');
 
   const owner = github.context.repo.owner;
@@ -54,7 +54,7 @@ async function run() {
     core.startGroup('Verifying request input...');
 
     const design = checkRequestType();
-    const release = checkRelease(octokit);
+    const release = await checkRelease(octokit);
 
     core.saveState('design', design);
     core.saveState('release', release);
