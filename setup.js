@@ -1,12 +1,14 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 
+const usage = 'Grade types must start with "f" for functionality (test) grades or "d" for design (code review) grades.';
+
 function checkRequestType() {
   const type = core.getInput('type');
   core.info(`Checking request type: ${type}`);
 
   if (!type) {
-    throw new Error('Missing required project grade type ([f]unctionality or [d]esign).');
+    throw new Error(`Missing required project grade type. ${usage}`);
   }
 
   switch (type.charAt(0)) {
@@ -17,7 +19,7 @@ function checkRequestType() {
       core.info('Requesting project functionality grade.');
       return false;
     default:
-      throw new Error(`Value "${type}" is not a valid project grade type. Values must start with "f" for functionality (test) grades or "d" for design (code review) grades.`);
+      throw new Error(`The value "${type}" is not a valid project grade type. ${usage}`);
   }
 }
 
@@ -28,11 +30,11 @@ function checkRelease(octokit) {
   const repo = github.context.repo.repo;
 
   core.info(`\nGetting release ${release} from ${repo}...`);
-  const release = await octokit.repos.getReleaseByTag({
+  const result = await octokit.repos.getReleaseByTag({
     owner: owner, repo: repo, tag: release
   });
 
-  core.info(JSON.stringify(release));
+  core.info(JSON.stringify(result));
 
   return release;
 }
