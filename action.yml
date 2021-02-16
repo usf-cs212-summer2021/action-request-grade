@@ -13,8 +13,9 @@ inputs:
   type:
     description: 'Type of grade, [f]unctionality or [d]esign'
     required: true
-    default: 'functionality'  
+    default: 'functionality'
 
 runs:
   using: 'node12'
+  pre: 'setup.js'
   main: 'index.js'
