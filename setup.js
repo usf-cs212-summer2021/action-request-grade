@@ -9,7 +9,7 @@ function checkRequestType() {
     throw new Error('Missing required project grade type ([f]unctionality or [d]esign).');
   }
 
-  switch (type.charAt(0)): {
+  switch (type.charAt(0)) {
     case 'd': case 'D':
       core.info('Requesting project design grade.');
       return true;
