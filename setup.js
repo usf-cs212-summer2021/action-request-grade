@@ -99,7 +99,7 @@ async function run() {
     // -----------------------------------------------
     core.startGroup(`Verifying release ${states.release} passed...`);
 
-    const run = await checkFunctionality();
+    const run = await checkFunctionality(octokit, states.release);
     states.runNumber = run.run_number;
     states.runId = run.id;
     states.runUrl = run.html_url;
@@ -121,7 +121,7 @@ async function run() {
   }
   catch (error) {
     // show error in group
-    core.info(`Error: ${error.message}`);
+    core.info(`Error: ${error.message}\n`);
     core.endGroup();
 
     // displays outside of group; always visible
