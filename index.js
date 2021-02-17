@@ -158,7 +158,7 @@ async function run() {
       const same = issues.find(x => x.title == title);
 
       if (same != undefined) {
-        core.info(`Result: ${JSON.stringify{same}}`);
+        core.info(`Result: ${JSON.stringify(same)}`);
         throw new Error(`An issue titled "${title}" already exists. Fix or delete that issue to proceed.`);
       }
 
