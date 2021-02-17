@@ -163,7 +163,7 @@ async function run() {
       }
 
       if (issues.length > 0) {
-        core.info(`Result: ${JSON.stringify{issues}}`);
+        core.info(`Result: ${JSON.stringify(issues)}`);
         core.warning(`Found ${issues.length} ${type.toLowerCase()} issues for project ${project} already. Only one such issue should be required. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
       }
 
