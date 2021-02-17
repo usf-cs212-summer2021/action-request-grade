@@ -40,8 +40,8 @@ function calculateGrade(created, project, type) {
   }
   else {
     const days = createdDate.diff(deadline, 'days');
-    core.info(`Release is ${days} days late.`);
-    results.late = days;
+    results.late = 1 + Math.floor(days / 7.0);
+    core.info(`Release is ${days} days (or ${results.late} weeks) late.`);
   }
 
   results.grade = 100 - (results.late * 10);
