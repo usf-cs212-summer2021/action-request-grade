@@ -5,7 +5,7 @@ const usage = 'Grade types must start with "f" for functionality (test) grades o
 
 function checkRequestType() {
   const type = core.getInput('type');
-  core.info(`Checking request type: ${type}`);
+  core.info(`\nChecking "${type}" request type...`);
 
   if (!type) {
     throw new Error(`Missing required project grade type. ${usage}`);
@@ -13,11 +13,9 @@ function checkRequestType() {
 
   switch (type.charAt(0)) {
     case 'd': case 'D':
-      core.info('Requesting project design grade.');
-      return true;
+      return 'design';
     case 'f': case 'F':
-      core.info('Requesting project functionality grade.');
-      return false;
+      return 'functionality';
     default:
       throw new Error(`The value "${type}" is not a valid project grade type. ${usage}`);
   }
@@ -29,18 +27,51 @@ async function checkRelease(octokit) {
   const owner = github.context.repo.owner;
   const repo = github.context.repo.repo;
 
-  core.info(`\nGetting release ${release} from ${repo}...`);
+  core.info(`\nChecking release ${release} from ${repo}...`);
   const result = await octokit.repos.getReleaseByTag({
     owner: owner, repo: repo, tag: release
   });
 
-  core.info(JSON.stringify(result));
+  if (result.status != 200) {
+    core.info(`Result: ${JSON.stringify(result)}`);
+    throw new Error(`The value "${release}" is not a valid project release.`);
+  }
 
-  return release;
+  return result;
 }
 
-function checkFunctionality() {
+async function checkFunctionality(octokit, release) {
+  core.info('Getting workflow runs...');
+  const runs = await octokit.actions.listWorkflowRuns({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    workflow_id: 'run-tests.yml',
+    event: 'release'
+  });
 
+  if (runs.status != 200) {
+    core.info(`Result: ${JSON.stringify(runs)}`);
+    throw new Error(`Unable to list workflows for ${github.context.repo.repo}.`);
+  }
+
+  // It is possible the run is on a separate page, but why would you request
+  // this check if there have been that many other runs?
+
+  const branches = runs.data.workflow_runs.map(r => r.head_branch);
+  core.info(`Fetched ${runs.data.workflow_runs.length} workflow runs: ${branches.join(', ')}`);
+
+  const found = runs.data.workflow_runs.find(r => r.head_branch === release);
+
+  if (found === undefined) {
+    throw new Error(`Could not find any recent runs for the ${release} release.`);
+  }
+
+  if (found.status != "completed" && found.conclusion != "success") {
+    core.info(`Result: ${JSON.stringify(found)}`);
+    throw new Error(`The workflow run #${found.run_number} (${found.id}) for the ${release} release was not successful.`);
+  }
+
+  return found;
 }
 
 async function run() {
@@ -49,22 +80,44 @@ async function run() {
     core.setSecret(token);
 
     const octokit = github.getOctokit(token);
+    const states = {};
 
     // -----------------------------------------------
     core.startGroup('Verifying request input...');
 
-    const design = checkRequestType();
-    const release = await checkRelease(octokit);
+    states.type = checkRequestType();
+    core.info(`Requesting project ${states.type} grade.`);
 
-    core.saveState('design', design);
-    core.saveState('release', release);
+    const release = await checkRelease(octokit);
+    states.release = release.data.tag_name;
+    states.releaseId = release.data.id;
+    states.releaseUrl = release.data.html_url;
+    core.info(`Found release at: ${states.releaseUrl}`);
 
     core.endGroup();
 
     // -----------------------------------------------
-    core.startGroup(`Verifying release ${release}...`);
-    checkFunctionality();
+    core.startGroup(`Verifying release ${release} passed...`);
+
+    const run = await checkFunctionality();
+    states.runNumber = run.run_number;
+    states.runId = run.id;
+    states.runUrl = run.html_url;
+    core.info(`Found successful run #${states.runNumber} (${states.runId}) for the ${release} release.`);
+
     core.endGroup();
+
+    // -----------------------------------------------
+    core.startGroup('Saving states...');
+
+    for (const state in states) {
+      core.saveState(state, states[state]);
+      core.info(`Saved value ${states[state]} for state ${state}.`);
+    }
+
+    core.saveState('keys', JSON.stringify(Object.keys(states)));
+    core.endGroup();
+
   }
   catch (error) {
     // show error in group
