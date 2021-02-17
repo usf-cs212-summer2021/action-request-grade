@@ -14,9 +14,9 @@ function checkRequestType() {
 
   switch (type.charAt(0)) {
     case 'd': case 'D':
-      return 'design';
+      return 'Design';
     case 'f': case 'F':
-      return 'functionality';
+      return 'Functionality';
     default:
       throw new Error(`The value "${type}" is not a valid project grade type. ${usage}`);
   }
