@@ -118,7 +118,7 @@ async function run() {
     core.endGroup();
 
     // save results for main phase
-    utils.saveStates();
+    utils.saveStates(states);
   }
   catch (error) {
     // show error in group
