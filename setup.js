@@ -41,7 +41,7 @@ async function checkRelease(octokit) {
 }
 
 async function checkFunctionality(octokit, release) {
-  core.info('Getting workflow runs...');
+  core.info('\nGetting workflow runs...');
   const runs = await octokit.actions.listWorkflowRuns({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
@@ -103,12 +103,13 @@ async function run() {
     states.runNumber = run.run_number;
     states.runId = run.id;
     states.runUrl = run.html_url;
-    core.info(`Found successful run #${states.runNumber} (${states.runId}) for the ${release} release.`);
+    core.info(`Found successful "${run.name}" run #${states.runNumber} (ID: ${states.runId}) for the ${states.release} release.\n`);
 
     core.endGroup();
 
     // -----------------------------------------------
     core.startGroup('Saving states...');
+    core.info('')
 
     for (const state in states) {
       core.saveState(state, states[state]);
@@ -116,6 +117,8 @@ async function run() {
     }
 
     core.saveState('keys', JSON.stringify(Object.keys(states)));
+
+    core.info('')
     core.endGroup();
 
   }
