@@ -68,7 +68,7 @@ async function getMilestone(octokit, project) {
 
       if (create.status == 201) {
         core.info(`Created ${create.title} milestone.`);
-        return create.data;
+        return create;
       }
 
       core.info(`Result: ${JSON.stringify(create)}`);
@@ -99,8 +99,7 @@ async function run() {
 
 
     if (states.type == 'functionality') {
-      // -----------------------------------------------
-      // core.startGroup(`Looking up project functionality issues...`);
+
 
       // const funIssues = findIssues(octokit, project, states.type);
       //
@@ -108,8 +107,13 @@ async function run() {
       //   core.warning(`Found ${funIssues.length} related ${states.type} issues for project ${3}. Are you sure you need to make a new request?`);
       // }
 
+      // -----------------------------------------------
+      core.startGroup(`Creating functionality issue...`);
+
       const milestone = getMilestone(octokit, project);
       core.info(JSON.stringify(milestone));
+
+      core.endGroup();
     }
     else if (states.type == 'design') {
       core.info('Hello world.');
