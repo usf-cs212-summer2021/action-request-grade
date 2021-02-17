@@ -67,8 +67,8 @@ async function getMilestone(octokit, project) {
       });
 
       if (create.status == 201) {
-        core.info(`Created ${create.title} milestone.`);
-        return create;
+        core.info(`Created ${create.data.title} milestone.`);
+        return create.data;
       }
 
       core.info(`Result: ${JSON.stringify(create)}`);
