@@ -30,7 +30,7 @@ function calculateGrade(created, project, type) {
   core.info(`Parsed created date: ${results.created}`);
 
   // const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
-  const deadlineText = '2021-02-09T23:59:59';
+  const deadlineText = '2021-02-08T23:59:59';
   const deadline = DateTime.fromISO(deadlineText, {zone: zone});
   results.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);
   core.info(`Parsed ${type.toLowerCase()} deadline: ${results.deadline}`);
@@ -41,12 +41,14 @@ function calculateGrade(created, project, type) {
   }
   else {
     const days = createdDate.diff(deadline, 'days').toObject().days;
+    core.info(`Release created ${days} day(s) late.`);
+
     results.late = 1 + Math.floor(days / 7.0);
     core.info(`Release is within ${results.late} week(s) late.`);
   }
 
   results.grade = 100 - (results.late * 10);
-  core.info(`Project ${project} ${type.toLowerCase()} earned a ${results.grade} grade (before deductions).`);
+  core.info(`Project ${project} ${type.toLowerCase()} earned a ${results.grade}% grade (before deductions).`);
 
   core.info(JSON.stringify(results));
   core.info('');
