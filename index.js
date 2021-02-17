@@ -110,7 +110,7 @@ async function run() {
       // -----------------------------------------------
       core.startGroup(`Creating functionality issue...`);
 
-      const milestone = getMilestone(octokit, project);
+      const milestone = await getMilestone(octokit, project);
       core.info(JSON.stringify(milestone));
 
       core.endGroup();
