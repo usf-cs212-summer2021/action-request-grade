@@ -118,7 +118,7 @@ async function createIssue(octokit, project, type, title, body) {
   const milestone = await getMilestone(octokit, project);
 
   core.info(`\nCreating ${type.toLowerCase()} issue...`);
-  const issue = octokit.issues.create({
+  const issue = await octokit.issues.create({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     assignee: assignee,
@@ -154,7 +154,7 @@ async function run() {
     core.info(`Requesting ${title}...\n`);
 
     if (type == 'Functionality') {
-      const issues = findIssues(octokit, project, type);
+      const issues = await findIssues(octokit, project, type);
       const same = issues.find(x => x.title == title);
 
       if (same != undefined) {
