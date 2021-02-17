@@ -21,18 +21,21 @@ function calculateGrade(created, project, type) {
   core.startGroup(`Calculating grade...`);
 
   const zone = 'America/Los_Angeles';
+  core.info(`\nRelease created: ${created}`);
+
 
   // all github timestamps are in ISO 8601 format
   const createdDate = DateTime.fromISO(created).setZone(zone);
-  core.info(`\nRelease created: ${createdDate.toLocaleString(DateTime.DATETIME_FULL)}`);
+  core.info(`Parsed created date: ${createdDate.toLocaleString(DateTime.DATETIME_FULL)}`);
 
   const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
   const deadline = DateTime.fromISO(deadlineText, {zone: zone});
-  core.info(`${type} deadline: ${deadline.toLocaleString(DateTime.DATETIME_FULL)}`);
+  core.info(`Parsed ${type.toLowerCase()} deadline: ${deadline.toLocaleString(DateTime.DATETIME_FULL)}`);
+
+  let grade = 100;
 
   if (createdDate < deadline) {
     core.info(`Release created before deadline!`);
-    return 100;
   }
   else {
     const days = createdDate.diff(deadline, 'days');
@@ -41,6 +44,8 @@ function calculateGrade(created, project, type) {
 
   core.info('');
   core.endGroup();
+
+  return grade;
 }
 
 async function findIssues(octokit, project, type) {
