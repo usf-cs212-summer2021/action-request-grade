@@ -137,6 +137,36 @@ async function createIssue(octokit, project, type, title, body) {
   throw new Error(`Unable to create "${title}" issue.`);
 }
 
+async function updateIssue(octokit, issue, comment) {
+  core.info(`\nAdding instructions to issue #${issue.number}...`);
+  const result = await octokit.issues.createComment({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    issue_number: issue.number,
+    body: comment
+  });
+
+  if (result.status != 201) {
+    core.info(`Result: ${JSON.stringify(result)}`);
+    throw new Error(`Unable to comment on issue #${issue.number}.`);
+  }
+
+  core.info(`Comment created at: ${result.data.html_url}`);
+
+  core.info(`\nClosing issue #${issue.number}...`);
+  const closed = await octokit.issues.update({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    issue_number: issue.number,
+    state: 'closed'
+  });
+
+  if (closed.status != 200) {
+    core.info(`Result: ${JSON.stringify(closed)}`);
+    throw new Error(`Unable to close issue #${issue.number}.`);
+  }
+}
+
 async function run() {
   try {
     const token = core.getInput('token');
@@ -166,7 +196,7 @@ async function run() {
 
       if (issues.length > 0) {
         core.info(`Result: ${JSON.stringify(issues)}`);
-        core.warning(`Found ${issues.length} ${type.toLowerCase()} issues for project ${project} already. Only one such issue should be required. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
+        throw new Error(`Found ${issues.length} ${type.toLowerCase()} issue(s) for project ${project} already. Only one such issue should be required. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
       }
       else {
         core.info(`This appears to be the first project ${project} ${type.toLowerCase()} issue.`);
@@ -201,13 +231,37 @@ async function run() {
 
 ## Grade Information
 
-  - **Late Penalty:** ${grade.late * 10}
-  - **Project ${type} Grade:** ${grade.grade}% (before deductions)
+  - **Late Penalty:** \`${grade.late * 10}\`
+  - **Project ${type} Grade:** \`${grade.grade}%\` (before deductions)
 
       `;
 
-      createIssue(octokit, project, type.toLowerCase(), title, body);
-      // updateIssue(octokit, issue, comments);
+      const issue = await createIssue(octokit, project, type.toLowerCase(), title, body);
+
+      const comment = `
+## Student Instructions
+
+Hello @${github.context.actor}! Please follow these instructions to request your project ${project} ${type.toLowerCase()} grade:
+
+  - [ ] Replace \`[FULL_NAME]\` with your full name and \`[USF_EMAIL]\` with your USF username so we can enter your grade on Canvas.
+
+  - [ ] Double-check the [labels, assignee, and milestone](https://guides.github.com/features/issues/) are set properly.
+
+  - [ ] Double check the parsed dates and resulting grade. It is possible the difference in time zones affected the math. If there is an error, please add a comment notifying us of the issue.
+
+  - [ ] **Re-open the issue when all of the above is complete.**
+
+Click each of the above tasks as you complete them!
+
+We will reply and lock this issue once the grade is updated on Canvas. If we do not respond within 2 *business* days, please reach out on CampusWire.
+
+:warning: **We will not see this issue and update your grade until you re-open it!**
+      `;
+
+      await updateIssue(octokit, issue, comment);
+
+      utils.showSuccess(`Issue #${issue.number} created. Visit the issue for further instructions!`);
+      utils.showWarning(`Grade not yet updated! Visit the created issue for further instructions!`);
 
       core.info('');
       core.endGroup();
