@@ -40,7 +40,7 @@ async function getMilestone(octokit, project) {
   });
 
   if (milestones.status == 200) {
-    const found = milestones.data.find(x => r.title === title);
+    const found = milestones.data.find(x => x.title === title);
 
     if (found === undefined) {
       const create = await octokit.issues.createMilestone({
