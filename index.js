@@ -18,7 +18,7 @@ function getProject(release) {
 }
 
 function calculateGrade(created, project, type) {
-  core.startGroup(`Calculating grade...`);
+  core.startGroup(`Calculating project ${project} ${type.toLowerCase()} grade...`);
 
   const results = {};
   const zone = 'America/Los_Angeles';
@@ -29,8 +29,7 @@ function calculateGrade(created, project, type) {
   results.created = createdDate.toLocaleString(DateTime.DATETIME_FULL);
   core.info(`Parsed created date: ${results.created}`);
 
-  // const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
-  const deadlineText = '2021-02-08T23:59:59';
+  const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
   const deadline = DateTime.fromISO(deadlineText, {zone: zone});
   results.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);
   core.info(`Parsed ${type.toLowerCase()} deadline: ${results.deadline}`);
@@ -58,19 +57,19 @@ function calculateGrade(created, project, type) {
 }
 
 async function findIssues(octokit, project, type) {
-  core.info(`Looking up ${type} issues for project ${project}...`);
+  core.info(`Looking up ${type.toLowerCase()} issues for project ${project}...`);
   const result = await octokit.issues.listForRepo({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    labels: `project${project},${type}`
+    labels: `project${project},${type.toLowerCase()}`
   });
 
   if (result.status == 200) {
+    core.info(`Found ${result.data.length} issues for project ${project} ${type.toLowerCase()}.`);
     return result.data;
   }
 
-  core.info(`No issues found.`);
-  return [];
+  throw new Error(`Unable to list issues for ${github.context.repo.repo}.`);
 }
 
 async function getMilestone(octokit, project) {
@@ -151,52 +150,62 @@ async function run() {
 
     const project = getProject(states.release);
     const type = states.type;
-    const lower = type.toLowerCase(); // used as constants key and issue label
     const title = `Project ${states.release} ${type} Grade`;
 
     core.info(`Requesting ${title}...\n`);
 
     if (type == 'Functionality') {
+      const issues = findIssues(octokit, project, type);
+      const same = issues.find(x => x.title == title);
 
+      if (same != undefined) {
+        core.info(`Result: ${JSON.stringify{same}}`);
+        throw new Error(`An issue titled "${title}" already exists. Fix or delete that issue to proceed.`);
+      }
 
-      // const funIssues = findIssues(octokit, project, states.type);
-      //
-      // if (funIssues.length > 0) {
-      //   core.warning(`Found ${funIssues.length} related ${states.type} issues for project ${3}. Are you sure you need to make a new request?`);
-      // }
+      if (issues.length > 0) {
+        core.info(`Result: ${JSON.stringify{issues}}`);
+        core.warning(`Found ${issues.length} ${type.toLowerCase()} issues for project ${project} already. Only one such issue should be required. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
+      }
 
-      calculateGrade(states.releaseDate, project, type);
+      // Future TODO: Check for verification of previous projects.
+
+      const grade = calculateGrade(states.releaseDate, project, type);
 
       // -----------------------------------------------
       core.startGroup(`Creating functionality issue...`);
 
-      // check if issue of same title already exists
-      // check if prior issues of same type but different releases
+      const body = `
+## Student Information
 
-//       const body = `
-// ## Student Information
-//
-//   - **Full Name:** [FULL_NAME]
-//   - **USF Email:** [USERNAME]
-//
-// ## Project Information
-//
-//   - **Project:** Project ${project} ${constants.names[project]}
-//   - **${upperType} Deadline:** ${constants[states.type][project].toDateString()}
-//   - **Release:** [${states.release}](${states.releaseUrl})
-//   - **Release Date:** Pending
-//
-// ## Grade Information
-//
-// Pending
-//       `;
+  - **Full Name:** [FULL_NAME]
+  - **USF Email:** [USF_EMAIL]@usfca.edu
+
+## Project Information
+
+  - **Project:** Project ${project} ${constants.names[project]}
+  - **${type} Deadline:** ${grade.deadline}
+
+## Release Information
+
+  - **Release:** [${states.release}](${states.releaseUrl})
+  - **Release Verified:** [Run ${states.runNumber} (${states.runId})](${states.runUrl})
+  - **Release Created:** ${grade.created}
+
+## Grade Information
+
+  - **Late Penalty:** ${grade.late * 10}
+  - **Project ${type} Grade:** ${grade.grade}% (before deductions)
+
+      `;
 
       // createIssue(octokit, project, type.toLowerCase(), title, body);
+      // updateIssue(octokit, issue, comments);
 
       core.endGroup();
     }
     else if (states.type == 'Design') {
-      core.info('Hello world.');
+      throw new Error(`This action does not yet support design grades. Contact the instructor for details on how to proceed.`);
     }
     else {
       throw new Error(`The value "${type}" is not a valid project grade type.`);
