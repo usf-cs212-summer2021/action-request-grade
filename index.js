@@ -107,7 +107,7 @@ async function run() {
     utils.restoreStates(states);
 
     const project = getProject(states.release);
-    const upperType = ${states.type.charAt(0).toUpperCase()}${states.type.slice(1)};
+    const upperType = `${states.type.charAt(0).toUpperCase()}${states.type.slice(1)}`;
     const title = `Project ${states.release} ${upperType} Grade`;
 
     core.info(`Requesting ${title}...\n`);
