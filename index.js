@@ -63,7 +63,7 @@ async function getMilestone(octokit, project) {
         repo: github.context.repo.repo,
         title: title,
         state: 'open',
-        description: constants.names[project]
+        description: `Project ${project} ${constants.names[project]}`
       });
 
       if (create.status == 201) {
@@ -109,6 +109,7 @@ async function run() {
       // }
 
       const milestone = getMilestone(octokit, project);
+      core.info(JSON.stringify(milestone));
     }
     else if (states.type == 'design') {
       core.info('Hello world.');
