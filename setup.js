@@ -102,7 +102,7 @@ async function run() {
     states.release = release.data.tag_name;
     states.releaseId = release.data.id;
     states.releaseUrl = release.data.html_url;
-    states.releaseDate = release.created_at;
+    states.releaseDate = release.data.created_at;
     core.info(`Found release at: ${states.releaseUrl}\n`);
 
     core.endGroup();
