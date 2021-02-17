@@ -1,5 +1,8 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
+
+var { DateTime } = require('luxon');
+
 const constants = require('./constants.js');
 const utils = require('./utils.js');
 
@@ -12,6 +15,32 @@ function getProject(release) {
   }
 
   throw new Error(`Unable to parse project from release ${release}.`);
+}
+
+function calculateGrade(created, project, type) {
+  core.startGroup(`Calculating grade...`);
+
+  // all github timestamps are in ISO 8601 format
+
+  const createdDate = DateTime.fromISO(created);
+  core.info(`Release created: ${createdDate.toDateString()}`);
+
+  const deadline = DateTime.fromISO(
+    constants[type.toLowerCase()][project],
+    {zone: 'America/Los_Angeles'}
+  );
+  core.info(`${type} deadline: ${deadline.toDateString()}`);
+
+  if (createdDate < deadline) {
+    core.info(`Release created before deadline!`);
+    return 100;
+  }
+  else {
+    const days = createdDate.diff(deadline, 'days');
+    core.info(`Release is ${days} days late.`);
+  }
+
+  core.endGroup();
 }
 
 async function findIssues(octokit, project, type) {
@@ -69,32 +98,32 @@ async function getMilestone(octokit, project) {
   throw new Error('Unable to list milestones.');
 }
 
-async function createIssue(octokit, project, type, title, body) {
-
-  const labels = [`project${project}`, type];
-  const assignee = constants.assign[type];
-
-  const milestone = await getMilestone(octokit, project);
-
-  core.info(`\nCreating ${type} issue...`);
-  const issue = octokit.issues.create({
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-    assignee: assignee,
-    labels: labels,
-    milestone: milestone.number,
-    title: title,
-    body: body
-  });
-
-  if (issue.status == 201) {
-    core.info(`Created issue #${issue.number}.`);
-    return issue;
-  }
-
-  core.info(`Result: ${JSON.stringify(issue)}`);
-  throw new Error(`Unable to create "${title}" issue.`);
-}
+// async function createIssue(octokit, project, type, title, body) {
+//
+//   const labels = [`project${project}`, type];
+//   const assignee = constants.assign[type];
+//
+//   const milestone = await getMilestone(octokit, project);
+//
+//   core.info(`\nCreating ${type} issue...`);
+//   const issue = octokit.issues.create({
+//     owner: github.context.repo.owner,
+//     repo: github.context.repo.repo,
+//     assignee: assignee,
+//     labels: labels,
+//     milestone: milestone.number,
+//     title: title,
+//     body: body
+//   });
+//
+//   if (issue.status == 201) {
+//     core.info(`Created issue #${issue.number}.`);
+//     return issue;
+//   }
+//
+//   core.info(`Result: ${JSON.stringify(issue)}`);
+//   throw new Error(`Unable to create "${title}" issue.`);
+// }
 
 async function run() {
   try {
@@ -107,12 +136,13 @@ async function run() {
     utils.restoreStates(states);
 
     const project = getProject(states.release);
-    const upperType = `${states.type.charAt(0).toUpperCase()}${states.type.slice(1)}`;
-    const title = `Project ${states.release} ${upperType} Grade`;
+    const type = states.type;
+    const lower = type.toLowerCase(); // used as constants key and issue label
+    const title = `Project ${states.release} ${type} Grade`;
 
     core.info(`Requesting ${title}...\n`);
 
-    if (states.type == 'functionality') {
+    if (type == 'Functionality') {
 
 
       // const funIssues = findIssues(octokit, project, states.type);
@@ -121,39 +151,41 @@ async function run() {
       //   core.warning(`Found ${funIssues.length} related ${states.type} issues for project ${3}. Are you sure you need to make a new request?`);
       // }
 
+      calculateGrade(states.releaseDate, project, type);
+
       // -----------------------------------------------
       core.startGroup(`Creating functionality issue...`);
 
       // check if issue of same title already exists
       // check if prior issues of same type but different releases
 
-      const body = `
-## Student Information
+//       const body = `
+// ## Student Information
+//
+//   - **Full Name:** [FULL_NAME]
+//   - **USF Email:** [USERNAME]
+//
+// ## Project Information
+//
+//   - **Project:** Project ${project} ${constants.names[project]}
+//   - **${upperType} Deadline:** ${constants[states.type][project].toDateString()}
+//   - **Release:** [${states.release}](${states.releaseUrl})
+//   - **Release Date:** Pending
+//
+// ## Grade Information
+//
+// Pending
+//       `;
 
-  - **Full Name:** [FULL_NAME]
-  - **USF Email:** [USERNAME]
-
-## Project Information
-
-  - **Project:** Project ${project} ${constants.names[project]}
-  - **${upperType} Deadline:** ${constants[states.type][project].toDateString()}
-  - **Release:** [${states.release}](${states.releaseUrl})
-  - **Release Date:** Pending
-
-## Grade Information
-
-Pending
-      `;
-
-      createIssue(octokit, project, type, title, body);
+      // createIssue(octokit, project, type.toLowerCase(), title, body);
 
       core.endGroup();
     }
-    else if (states.type == 'design') {
+    else if (states.type == 'Design') {
       core.info('Hello world.');
     }
     else {
-      throw new Error(`The value "${states.type}" is not a valid project grade type.`);
+      throw new Error(`The value "${type}" is not a valid project grade type.`);
     }
   }
   catch (error) {
