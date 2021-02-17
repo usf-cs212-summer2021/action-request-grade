@@ -92,12 +92,12 @@ async function run() {
     states.release = release.data.tag_name;
     states.releaseId = release.data.id;
     states.releaseUrl = release.data.html_url;
-    core.info(`Found release at: ${states.releaseUrl}`);
+    core.info(`Found release at: ${states.releaseUrl}\n`);
 
     core.endGroup();
 
     // -----------------------------------------------
-    core.startGroup(`Verifying release ${release} passed...`);
+    core.startGroup(`Verifying release ${states.release} passed...`);
 
     const run = await checkFunctionality();
     states.runNumber = run.run_number;
@@ -121,7 +121,7 @@ async function run() {
   }
   catch (error) {
     // show error in group
-    utils.showError(`${error.message}`);
+    core.info(`Error: ${error.message}`);
     core.endGroup();
 
     // displays outside of group; always visible
