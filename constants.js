@@ -17,3 +17,8 @@ exports.names = {
   3: 'Multithreading',
   4: 'Search Engine'
 };
+
+exports.assign = {
+  functionality: ['josecorella'],
+  design: ['josecorella']
+};
