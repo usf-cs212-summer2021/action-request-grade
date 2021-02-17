@@ -19,6 +19,6 @@ exports.names = {
 };
 
 exports.assign = {
-  functionality: ['josecorella'],
-  design: ['josecorella']
+  functionality: 'josecorella',
+  design: 'josecorella'
 };

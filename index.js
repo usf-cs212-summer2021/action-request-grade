@@ -14,21 +14,21 @@ function getProject(release) {
   throw new Error(`Unable to parse project from release ${release}.`);
 }
 
-// async function findIssues(octokit, project, type) {
-//   core.info(`Looking up ${type} issues for project ${project}...`);
-//   const result = await octokit.issues.listForRepo({
-//     owner: github.context.repo.owner,
-//     repo: github.context.repo.repo,
-//     labels: `project${project},${type}`
-//   });
-//
-//   if (result.status == 200) {
-//     return result.data.map(x => x.number);
-//   }
-//
-//   core.info(`No issues found.`);
-//   return [];
-// }
+async function findIssues(octokit, project, type) {
+  core.info(`Looking up ${type} issues for project ${project}...`);
+  const result = await octokit.issues.listForRepo({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    labels: `project${project},${type}`
+  });
+
+  if (result.status == 200) {
+    return result.data;
+  }
+
+  core.info(`No issues found.`);
+  return [];
+}
 
 async function getMilestone(octokit, project) {
   const title = `Project ${project}`;
@@ -69,6 +69,33 @@ async function getMilestone(octokit, project) {
   throw new Error('Unable to list milestones.');
 }
 
+async function createIssue(octokit, project, type, title, body) {
+
+  const labels = [`project${project}`, type];
+  const assignee = constants.assign[type];
+
+  const milestone = await getMilestone(octokit, project);
+
+  core.info(`\nCreating ${type} issue...`);
+  const issue = octokit.issues.create({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    assignee: assignee,
+    labels: labels,
+    milestone: milestone.number,
+    title: title,
+    body: body
+  });
+
+  if (issue.status == 201) {
+    core.info(`Created issue #${issue.number}.`);
+    return issue;
+  }
+
+  core.info(`Result: ${JSON.stringify(issue)}`);
+  throw new Error(`Unable to create "${title}" issue.`);
+}
+
 async function run() {
   try {
     const token = core.getInput('token');
@@ -80,8 +107,10 @@ async function run() {
     utils.restoreStates(states);
 
     const project = getProject(states.release);
-    core.info(`Requesting Project ${project} ${states.type} grade.\n`);
+    const upperType = ${states.type.charAt(0).toUpperCase()}${states.type.slice(1)};
+    const title = `Project ${states.release} ${upperType} Grade`;
 
+    core.info(`Requesting ${title}...\n`);
 
     if (states.type == 'functionality') {
 
@@ -95,8 +124,28 @@ async function run() {
       // -----------------------------------------------
       core.startGroup(`Creating functionality issue...`);
 
-      const milestone = await getMilestone(octokit, project);
-      core.info(JSON.stringify(milestone));
+      // check if issue of same title already exists
+      // check if prior issues of same type but different releases
+
+      const body = `
+## Student Information
+
+  - **Full Name:** [FULL_NAME]
+  - **USF Email:** [USERNAME]
+
+## Project Information
+
+  - **Project:** Project ${project} ${constants.names[project]}
+  - **${upperType} Deadline:** ${constants[states.type][project].toDateString()}
+  - **Release:** [${states.release}](${states.releaseUrl})
+  - **Release Date:** Pending
+
+## Grade Information
+
+Pending
+      `;
+
+      createIssue(octokit, project, type, title, body);
 
       core.endGroup();
     }
