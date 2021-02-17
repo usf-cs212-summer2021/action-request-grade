@@ -30,7 +30,7 @@ function calculateGrade(created, project, type) {
   core.info(`Parsed created date: ${results.created}`);
 
   // const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
-  const deadlineText = '2020-02-16T21:00:00';
+  const deadlineText = '2021-02-16T21:00:00';
   const deadline = DateTime.fromISO(deadlineText, {zone: zone});
   results.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);
   core.info(`Parsed ${type.toLowerCase()} deadline: ${results.deadline}`);
