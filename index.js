@@ -259,11 +259,11 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       `;
 
       await updateIssue(octokit, issue, comment);
-      
+
       core.info('');
       core.endGroup();
 
-      utils.showSuccess(`${type} issue #${issue.data.number} for project ${project} release ${states.release} created. Visit the issue for further instructions!`);
+      utils.showSuccess(`${type} issue #${issue.data.number} for project ${project} release ${states.release} created. Visit the issue for further instructions at: ${issue.data.html_url}`);
       utils.showWarning(`Grade not yet updated! Visit the created issue for further instructions!`);
 
     }
