@@ -23,13 +23,13 @@ function calculateGrade(created, project, type) {
   // all github timestamps are in ISO 8601 format
 
   const createdDate = DateTime.fromISO(created);
-  core.info(`Release created: ${createdDate.toDateString()}`);
+  core.info(`Release created: ${createdDate.toLocaleString(DateTime.DATE_FULL)}`);
 
   const deadline = DateTime.fromISO(
     constants[type.toLowerCase()][project],
     {zone: 'America/Los_Angeles'}
   );
-  core.info(`${type} deadline: ${deadline.toDateString()}`);
+  core.info(`${type} deadline: ${deadline.toLocaleString(DateTime.DATE_FULL)}`);
 
   if (createdDate < deadline) {
     core.info(`Release created before deadline!`);
