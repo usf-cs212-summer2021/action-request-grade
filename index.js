@@ -20,16 +20,15 @@ function getProject(release) {
 function calculateGrade(created, project, type) {
   core.startGroup(`Calculating grade...`);
 
+  const zone = 'America/Los_Angeles';
+
   // all github timestamps are in ISO 8601 format
+  const createdDate = DateTime.fromISO(created).setZone(zone);
+  core.info(`\nRelease created: ${createdDate.toLocaleString(DateTime.DATETIME_FULL)}`);
 
-  const createdDate = DateTime.fromISO(created);
-  core.info(`Release created: ${createdDate.toLocaleString(DateTime.DATE_FULL)}`);
-
-  const deadline = DateTime.fromISO(
-    constants[type.toLowerCase()][project],
-    {zone: 'America/Los_Angeles'}
-  );
-  core.info(`${type} deadline: ${deadline.toLocaleString(DateTime.DATE_FULL)}`);
+  const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
+  const deadline = DateTime.fromISO(deadlineText, {zone: zone});
+  core.info(`${type} deadline: ${deadline.toLocaleString(DateTime.DATETIME_FULL)}`);
 
   if (createdDate < deadline) {
     core.info(`Release created before deadline!`);
@@ -40,6 +39,7 @@ function calculateGrade(created, project, type) {
     core.info(`Release is ${days} days late.`);
   }
 
+  core.info('');
   core.endGroup();
 }
 
