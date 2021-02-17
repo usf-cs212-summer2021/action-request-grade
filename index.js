@@ -129,7 +129,7 @@ async function createIssue(octokit, project, type, title, body) {
   });
 
   if (issue.status == 201) {
-    core.info(`Created issue #${issue.number}.`);
+    core.info(`Created issue #${issue.data.number}.`);
     return issue;
   }
 
@@ -142,28 +142,28 @@ async function updateIssue(octokit, issue, comment) {
   const result = await octokit.issues.createComment({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    issue_number: issue.number,
+    issue_number: issue.data.number,
     body: comment
   });
 
   if (result.status != 201) {
     core.info(`Result: ${JSON.stringify(result)}`);
-    throw new Error(`Unable to comment on issue #${issue.number}.`);
+    throw new Error(`Unable to comment on issue #${issue.data.number}.`);
   }
 
   core.info(`Comment created at: ${result.data.html_url}`);
 
-  core.info(`\nClosing issue #${issue.number}...`);
+  core.info(`\nClosing issue #${issue.data.number}...`);
   const closed = await octokit.issues.update({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    issue_number: issue.number,
+    issue_number: issue.data.number,
     state: 'closed'
   });
 
   if (closed.status != 200) {
     core.info(`Result: ${JSON.stringify(closed)}`);
-    throw new Error(`Unable to close issue #${issue.number}.`);
+    throw new Error(`Unable to close issue #${issue.data.number}.`);
   }
 }
 
@@ -259,12 +259,13 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       `;
 
       await updateIssue(octokit, issue, comment);
-
-      utils.showSuccess(`Issue #${issue.number} created. Visit the issue for further instructions!`);
-      utils.showWarning(`Grade not yet updated! Visit the created issue for further instructions!`);
-
+      
       core.info('');
       core.endGroup();
+
+      utils.showSuccess(`${type} issue #${issue.data.number} for project ${project} release ${states.release} created. Visit the issue for further instructions!`);
+      utils.showWarning(`Grade not yet updated! Visit the created issue for further instructions!`);
+
     }
     else if (states.type == 'Design') {
       core.startGroup('Handling project design grade request...');
