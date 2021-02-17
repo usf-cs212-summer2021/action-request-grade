@@ -96,7 +96,7 @@ async function run() {
     core.startGroup('Verifying request input...');
 
     states.type = checkRequestType();
-    core.info(`Requesting project ${states.type} grade.`);
+    core.info(`Requesting project ${states.type.toLowerCase()} grade.`);
 
     const release = await checkRelease(octokit);
     states.release = release.data.tag_name;
