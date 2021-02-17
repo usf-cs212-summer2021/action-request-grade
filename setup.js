@@ -28,9 +28,16 @@ async function checkRelease(octokit) {
   const repo = github.context.repo.repo;
 
   core.info(`\nChecking release ${release} from ${repo}...`);
-  const result = await octokit.repos.getReleaseByTag({
-    owner: owner, repo: repo, tag: release
-  });
+
+  try {
+    const result = await octokit.repos.getReleaseByTag({
+      owner: owner, repo: repo, tag: release
+    });
+  }
+  catch (error) {
+    // better error output than provided
+    throw new Error(`Unable to find release ${release} (${error.message.toLowerCase()}).`);
+  }
 
   if (result.status != 200) {
     core.info(`Result: ${JSON.stringify(result)}`);
