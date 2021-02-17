@@ -1,22 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const constants = require('./constants.js');
-
-function restoreStates(states) {
-  core.startGroup('Restoring state...');
-
-  const keys = JSON.parse(core.getState('keys'));
-  core.info(`\nLoaded keys: ${keys}`);
-
-  for (const key of keys) {
-    states[key] = core.getState(key);
-    core.info(`Restored value ${states[key]} for state ${key}.`);
-  }
-
-  core.info('');
-  core.endGroup();
-  return states;
-}
+const utils = require('./utils.js');
 
 function getProject(release) {
   const regex = /^v([1-4])\.(\d+)\.(\d+)$/;
@@ -92,10 +77,10 @@ async function run() {
     const octokit = github.getOctokit(token);
 
     const states = {}; // values saved from setup
-    restoreStates(states);
+    utils.restoreStates(states);
 
     const project = getProject(states.release);
-    core.info(`Requesting Project ${project} ${states.type} grade.`);
+    core.info(`Requesting Project ${project} ${states.type} grade.\n`);
 
 
     if (states.type == 'functionality') {

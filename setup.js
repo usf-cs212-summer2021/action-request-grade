@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
+const utils = require('./utils.js');
 
 const usage = 'Grade types must start with "f" for functionality (test) grades or "d" for design (code review) grades.';
 
@@ -116,24 +117,12 @@ async function run() {
 
     core.endGroup();
 
-    // -----------------------------------------------
-    core.startGroup('Saving states...');
-    core.info('')
-
-    for (const state in states) {
-      core.saveState(state, states[state]);
-      core.info(`Saved value ${states[state]} for state ${state}.`);
-    }
-
-    core.saveState('keys', JSON.stringify(Object.keys(states)));
-
-    core.info('')
-    core.endGroup();
-
+    // save results for main phase
+    utils.saveStates();
   }
   catch (error) {
     // show error in group
-    core.info(`Error: ${error.message}\n`);
+    utils.showError(`${error.message}\n`);
     core.endGroup();
 
     // displays outside of group; always visible
