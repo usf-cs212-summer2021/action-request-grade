@@ -151,9 +151,11 @@ async function run() {
     const type = states.type;
     const title = `Project ${states.release} ${type} Grade`;
 
-    core.info(`Requesting ${title}...\n`);
-
     if (type == 'Functionality') {
+      // -----------------------------------------------
+      core.startGroup(`Checking for previous ${type.toLowerCase()} issues...`);
+      core.info(`\nRequesting ${title}...`);
+
       const issues = await findIssues(octokit, project, type);
       const same = issues.find(x => x.title == title);
 
@@ -166,9 +168,15 @@ async function run() {
         core.info(`Result: ${JSON.stringify(issues)}`);
         core.warning(`Found ${issues.length} ${type.toLowerCase()} issues for project ${project} already. Only one such issue should be required. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
       }
+      else {
+        core.info(`This appears to be the first project ${project} ${type.toLowerCase()} issue.`);
+      }
 
       // Future TODO: Check for verification of previous projects.
+      core.info('');
+      core.endGroup();
 
+      // -----------------------------------------------
       const grade = calculateGrade(states.releaseDate, project, type);
 
       // -----------------------------------------------
@@ -201,12 +209,15 @@ async function run() {
       createIssue(octokit, project, type.toLowerCase(), title, body);
       // updateIssue(octokit, issue, comments);
 
+      core.info('');
       core.endGroup();
     }
     else if (states.type == 'Design') {
+      core.startGroup('Handling project design grade request...');
       throw new Error(`This action does not yet support design grades. Contact the instructor for details on how to proceed.`);
     }
     else {
+      core.startGroup('Handling unknown request...');
       throw new Error(`The value "${type}" is not a valid project grade type.`);
     }
   }
