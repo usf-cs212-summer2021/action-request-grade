@@ -111,32 +111,31 @@ async function getMilestone(octokit, project) {
   throw new Error('Unable to list milestones.');
 }
 
-// async function createIssue(octokit, project, type, title, body) {
-//
-//   const labels = [`project${project}`, type];
-//   const assignee = constants.assign[type];
-//
-//   const milestone = await getMilestone(octokit, project);
-//
-//   core.info(`\nCreating ${type} issue...`);
-//   const issue = octokit.issues.create({
-//     owner: github.context.repo.owner,
-//     repo: github.context.repo.repo,
-//     assignee: assignee,
-//     labels: labels,
-//     milestone: milestone.number,
-//     title: title,
-//     body: body
-//   });
-//
-//   if (issue.status == 201) {
-//     core.info(`Created issue #${issue.number}.`);
-//     return issue;
-//   }
-//
-//   core.info(`Result: ${JSON.stringify(issue)}`);
-//   throw new Error(`Unable to create "${title}" issue.`);
-// }
+async function createIssue(octokit, project, type, title, body) {
+  const labels = [`project${project}`, type.toLowerCase()];
+  const assignee = constants.assign[type.toLowerCase()];
+
+  const milestone = await getMilestone(octokit, project);
+
+  core.info(`\nCreating ${type.toLowerCase()} issue...`);
+  const issue = octokit.issues.create({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    assignee: assignee,
+    labels: labels,
+    milestone: milestone.number,
+    title: title,
+    body: body
+  });
+
+  if (issue.status == 201) {
+    core.info(`Created issue #${issue.number}.`);
+    return issue;
+  }
+
+  core.info(`Result: ${JSON.stringify(issue)}`);
+  throw new Error(`Unable to create "${title}" issue.`);
+}
 
 async function run() {
   try {
@@ -199,7 +198,7 @@ async function run() {
 
       `;
 
-      // createIssue(octokit, project, type.toLowerCase(), title, body);
+      createIssue(octokit, project, type.toLowerCase(), title, body);
       // updateIssue(octokit, issue, comments);
 
       core.endGroup();
