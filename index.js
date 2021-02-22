@@ -61,7 +61,8 @@ async function findIssues(octokit, project, type) {
   const result = await octokit.issues.listForRepo({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    labels: `project${project},${type.toLowerCase()}`
+    labels: `project${project},${type.toLowerCase()}`,
+    state: 'all'
   });
 
   if (result.status == 200) {
