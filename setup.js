@@ -76,7 +76,7 @@ async function checkFunctionality(octokit, release) {
     throw new Error(`Could not find any recent runs for the ${release} release.`);
   }
 
-  if (found.status != "completed" && found.conclusion != "success") {
+  if (found.status != "completed" || found.conclusion != "success") {
     core.info(`Result: ${JSON.stringify(found)}`);
     throw new Error(`The workflow run #${found.run_number} (${found.id}) for the ${release} release was not successful.`);
   }
