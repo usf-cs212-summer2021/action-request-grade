@@ -139,7 +139,7 @@ async function createIssue(octokit, project, type, title, body) {
 }
 
 async function updateIssue(octokit, issue, comment) {
-  core.info(`\nAdding instructions to issue #${issue.number}...`);
+  core.info(`\nAdding instructions to issue #${issue.data.number}...`);
   const result = await octokit.issues.createComment({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
