@@ -73,14 +73,14 @@ async function checkFunctionality(octokit, release) {
   const found = runs.data.workflow_runs.find(r => r.head_branch === release);
 
   if (found === undefined) {
-    // throw new Error(`Could not find any recent runs for the ${release} release.`);
-    core.warning(`Could not find any recent runs for the ${release} release. This could be due to ongoing issues with Github Actions. Please manually verify.`);
-    return {
-      name: 'UNCONFIRMED',
-      run_number: 'UNCONFIRMED',
-      id: 'UNCONFIRMED',
-      html_url: `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions`
-    };
+    throw new Error(`Could not find any recent runs for the ${release} release.`);
+    // core.warning(`Could not find any recent runs for the ${release} release. This could be due to ongoing issues with Github Actions. Please manually verify.`);
+    // return {
+    //   name: 'UNCONFIRMED',
+    //   run_number: 'UNCONFIRMED',
+    //   id: 'UNCONFIRMED',
+    //   html_url: `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions`
+    // };
   }
 
   if (found.status != "completed" || found.conclusion != "success") {
