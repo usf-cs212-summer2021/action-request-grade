@@ -58,10 +58,17 @@ function calculateGrade(created, project, type) {
 
 async function findIssues(octokit, project, type) {
   core.info(`Looking up ${type.toLowerCase()} issues for project ${project}...`);
+
+  const labels = [`project${project}`];
+
+  if (type) {
+    labels.push(type.toLowerCase);
+  }
+
   const result = await octokit.issues.listForRepo({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    labels: `project${project},${type.toLowerCase()}`,
+    labels: labels.join(','),
     state: 'all'
   });
 
@@ -182,6 +189,26 @@ async function run() {
     const type = states.type;
     const title = `Project ${states.release} ${type} Grade`;
 
+    const comment = `
+## Student Instructions
+
+Hello @${github.context.actor}! Please follow these instructions to request your project ${project} ${type.toLowerCase()} grade:
+
+- [ ] Replace \`[FULL_NAME]\` with your full name and \`[USF_EMAIL]\` with your USF username so we can enter your grade on Canvas.
+
+- [ ] Double-check the [labels, assignee, and milestone](https://guides.github.com/features/issues/) are set properly.
+
+- [ ] Double check the parsed dates and resulting grade. It is possible the difference in time zones affected the math. If there is an error, please add a comment notifying us of the issue.
+
+- [ ] **Re-open the issue when all of the above is complete.**
+
+Click each of the above tasks as you complete them!
+
+We will reply and lock this issue once the grade is updated on Canvas. If we do not respond within 2 *business* days, please reach out on CampusWire.
+
+:warning: **We will not see this issue and update your grade until you re-open it!**
+    `;
+
     if (type == 'Functionality') {
       // -----------------------------------------------
       core.startGroup(`Checking for previous ${type.toLowerCase()} issues...`);
@@ -203,7 +230,7 @@ async function run() {
         core.info(`This appears to be the first project ${project} ${type.toLowerCase()} issue.`);
       }
 
-      // Future TODO: Check for verification of previous projects.
+      // TODO Check for verification of previous projects.
       core.info('');
       core.endGroup();
 
@@ -239,26 +266,6 @@ async function run() {
 
       const issue = await createIssue(octokit, project, type.toLowerCase(), title, body);
 
-      const comment = `
-## Student Instructions
-
-Hello @${github.context.actor}! Please follow these instructions to request your project ${project} ${type.toLowerCase()} grade:
-
-  - [ ] Replace \`[FULL_NAME]\` with your full name and \`[USF_EMAIL]\` with your USF username so we can enter your grade on Canvas.
-
-  - [ ] Double-check the [labels, assignee, and milestone](https://guides.github.com/features/issues/) are set properly.
-
-  - [ ] Double check the parsed dates and resulting grade. It is possible the difference in time zones affected the math. If there is an error, please add a comment notifying us of the issue.
-
-  - [ ] **Re-open the issue when all of the above is complete.**
-
-Click each of the above tasks as you complete them!
-
-We will reply and lock this issue once the grade is updated on Canvas. If we do not respond within 2 *business* days, please reach out on CampusWire.
-
-:warning: **We will not see this issue and update your grade until you re-open it!**
-      `;
-
       await updateIssue(octokit, issue, comment);
 
       core.info('');
@@ -268,8 +275,44 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       utils.showWarning(`Grade not yet updated! Visit the created issue for further instructions!`);
 
     }
-    else if (states.type == 'Design') {
+    else if (type == 'Design') {
+      // -----------------------------------------------
+      core.startGroup(`Checking for previous project ${project} issues...`);
+      core.info(`\nRequesting ${title}...`);
+
+      const issues = await findIssues(octokit, project, undefined);
+      const same = issues.find(x => x.title == title);
+
+      if (same != undefined) {
+        core.info(`Result: ${JSON.stringify(same)}`);
+        throw new Error(`An issue titled "${title}" already exists. Fix or delete that issue to proceed.`);
+      }
+
+      if (issues.length > 1) {
+        core.info(`Result: ${JSON.stringify(issues)}`);
+        throw new Error(`Found ${issues.length} issue(s) for project ${project} already. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
+      }
+
+      // TODO Check for closed functionality issue
+
+      core.info('');
+      core.endGroup();
+
       core.startGroup('Handling project design grade request...');
+
+
+      /*
+      Must already have functionality grade.
+      Must have a passing release.
+      List all approved pull requests.
+      List all extra pull requests with a warning.
+      Number, vLabel, Type Approved Date
+      Use first approved pull to calculate design grade.
+
+      */
+
+
+
       throw new Error(`This action does not yet support design grades. Contact the instructor for details on how to proceed.`);
     }
     else {
