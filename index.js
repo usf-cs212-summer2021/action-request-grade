@@ -336,6 +336,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       core.endGroup();
 
       core.startGroup(`Finding project ${project} pull requests...`);
+      core.info('');
 
       // find all of the pull requests that were actually approved
       const approved = [];
@@ -361,8 +362,9 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         const found = reviews.data.filter(x => x.state == "APPROVED" && x.user.login == "sjengle");
 
         if (found.length > 0) {
-          pull.approved = found;
+          pull.approved = found[0];
           approved.push(pull);
+          core.info('');
         }
         else {
           unapproved.push(pull);
@@ -372,13 +374,28 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       core.info("Approved: " + JSON.stringify(approved.map(x => x.number)));
       core.info("Unapproved: " + JSON.stringify(unapproved.map(x => x.number)));
 
+      if (approved.length > 1) {
+        core.info("Pulls: " + JSON.stringify(pulls));
+        throw new Error(`Unable to find any approved pull requests for project ${project}. You must have at least one approved pull request to pass project design.`);
+      }
+
+      states.approvedPull = approved.length > 0 ? approved[0].number : 'N/A';
+      states.approvedDate = approved.length > 0 ? approved[0].approved.submitted_at : 'N/A';
+
+      core.info('');
+      core.info("First Approved Pull: " + states.approvedPull);
+      core.info("First Approved Date: " + states.approvedDate);
+
       core.info('');
       core.endGroup();
 
+      // -----------------------------------------------
+      const grade = calculateGrade(states.approvedDate, project, type);
+
       core.startGroup('Handling project design grade request...');
 
-      // core.info(JSON.stringify(pulls));
-      // core.info(JSON.stringify(functionality));
+      core.info(JSON.stringify(approved));
+      core.info(JSON.stringify(functionality));
 
 
       /*
