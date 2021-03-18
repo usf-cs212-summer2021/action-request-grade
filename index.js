@@ -293,6 +293,8 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         throw new Error(`Found ${issues.length} issue(s) for project ${project} already. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
       }
 
+      core.info(JSON.stringify(issues));
+
       // TODO Check for closed functionality issue
 
       core.info('');
