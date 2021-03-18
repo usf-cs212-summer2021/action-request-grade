@@ -289,7 +289,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       let same = false;
       let functionality = undefined;
 
-      for (const issue in issues) {
+      for (const issue of issues) {
         if (issue.title == title) { // make sure duplicate doesn't exist
           same = true;
           break;
