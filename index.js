@@ -341,11 +341,14 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
           pull_number: pull.number
         });
 
-        core.info(JSON.stringify(reviews));
+        // save fetched data for output
+        pull.reviews = reviews;
+
         const approved = reviews.data.filter(x => x.state == "APPROVED" && x.user.login == "sjengle");
 
+        core.info(JSON.stringify(approved));
+
         if (approved.length > 0) {
-          pull.approved = approved;
           approved.push(pull);
         }
         else {
