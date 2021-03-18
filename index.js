@@ -22,12 +22,12 @@ function calculateGrade(created, project, type) {
 
   const results = {};
   const zone = 'America/Los_Angeles';
-  core.info(`\nRelease created: ${created}`);
+  core.info(`\nSubmitted date: ${created}`);
 
   // all github timestamps are in ISO 8601 format
   const createdDate = DateTime.fromISO(created).setZone(zone);
   results.created = createdDate.toLocaleString(DateTime.DATETIME_FULL);
-  core.info(`Parsed created date: ${results.created}`);
+  core.info(`Parsed submitted date: ${results.created}`);
 
   const deadlineText = `${constants[type.toLowerCase()][project]}T23:59:59`
   const deadline = DateTime.fromISO(deadlineText, {zone: zone});
@@ -35,15 +35,15 @@ function calculateGrade(created, project, type) {
   core.info(`Parsed ${type.toLowerCase()} deadline: ${results.deadline}`);
 
   if (createdDate < deadline) {
-    core.info(`Release created before deadline!`);
+    core.info(`Submitted before deadline!`);
     results.late = 0;
   }
   else {
     const days = createdDate.diff(deadline, 'days').toObject().days;
-    core.info(`Release created ${days} day(s) late.`);
+    core.info(`Submitted ${days} day(s) late.`);
 
     results.late = 1 + Math.floor(days / 7.0);
-    core.info(`Release is within ${results.late} week(s) late.`);
+    core.info(`Submitted within ${results.late} week(s) late.`);
   }
 
   results.grade = 100 - (results.late * 10);
@@ -310,10 +310,6 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         extra.push(issue);
       }
 
-      core.info(JSON.stringify(pulls));
-      core.info(JSON.stringify(extra));
-      core.info(JSON.stringify(functionality));
-
       if (same) {
         core.info(`Result: ${JSON.stringify(same)}`);
         throw new Error(`An issue titled "${title}" already exists. Fix or delete that issue to proceed.`);
@@ -324,14 +320,45 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         throw new Error(`Found ${extra.length} extra issue(s) for project ${project} already. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
       }
 
+      if (!functionality) {
+        core.info(`Result: ${JSON.stringify(issues)}`);
+        throw new Error(`Could not find an approved and locked functionality issue for project ${project}. If you have a functionality issue, contact the instructor or teacher assistant to make sure the issue is properly locked first.`);
+      }
 
-
-      // TODO Check for closed functionality issue
+      core.info(`This appears to be the first project ${project} ${type.toLowerCase()} issue.`);
 
       core.info('');
       core.endGroup();
 
+      // find all of the pull requests that were actually approved
+      const approved = [];
+      const unapproved = [];
+
+      for (const pull of pulls) {
+        const reviews = await octokit.pulls.listReviews({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          pull_number: pull.number
+        });
+
+        const approved = reviews.data.filter(x => x.state == "APPROVED" && x.user.login == "sjengle");
+
+        if (approved.length > 0) {
+          pull.approved = approved;
+          approved.push(pull);
+        }
+        else {
+          unapproved.push(pull);
+        }
+      }
+
+      core.info(JSON.stringify(approved));
+      core.info(JSON.stringify(unapproved));
+
       core.startGroup('Handling project design grade request...');
+
+      // core.info(JSON.stringify(pulls));
+      // core.info(JSON.stringify(functionality));
 
 
       /*
@@ -347,6 +374,9 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
 
       throw new Error(`This action does not yet support design grades. Contact the instructor for details on how to proceed.`);
+
+      core.info('');
+      core.endGroup();
     }
     else {
       core.startGroup('Handling unknown request...');
