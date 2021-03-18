@@ -282,19 +282,49 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       core.info(`\nRequesting ${title}...`);
 
       const issues = await findIssues(octokit, project, undefined);
-      const same = issues.find(x => x.title == title);
 
-      if (same != undefined) {
+      const pulls = []; // pull requests
+      const extra = []; // extra issues
+
+      let same = false;
+      let functionality = undefined;
+
+      for (const issue in issues) {
+        if (issue.title == title) { // make sure duplicate doesn't exist
+          same = true;
+          break;
+        }
+
+        if ('pull_request' in issue) { // find the pull requests while at it
+          pulls.push(issue);
+          continue;
+        }
+
+        if (issue.state == 'closed' && issue.locked == true && issue.active_lock_reason == 'resolved') {
+          if (issue.labels.some(label => label.name == 'functionality')) {
+            functionality = issue;
+            continue;
+          }
+        }
+
+        extra.push(issue);
+      }
+
+      core.info(JSON.stringify(pulls));
+      core.info(JSON.stringify(extra));
+      core.info(JSON.stringify(functionality));
+
+      if (same) {
         core.info(`Result: ${JSON.stringify(same)}`);
         throw new Error(`An issue titled "${title}" already exists. Fix or delete that issue to proceed.`);
       }
 
-      if (issues.length > 1) {
-        core.info(`Result: ${JSON.stringify(issues)}`);
-        throw new Error(`Found ${issues.length} issue(s) for project ${project} already. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
+      if (extra.length > 0) {
+        core.info(`Result: ${JSON.stringify(extra)}`);
+        throw new Error(`Found ${extra.length} extra issue(s) for project ${project} already. Are you sure you need to create a new issue? Consider fixing or deleting the other issues instead!`);
       }
 
-      core.info(JSON.stringify(issues));
+
 
       // TODO Check for closed functionality issue
 
