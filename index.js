@@ -364,7 +364,6 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         if (found.length > 0) {
           pull.approved = found[0];
           approved.push(pull);
-          core.info('');
         }
         else {
           unapproved.push(pull);
@@ -374,7 +373,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       core.info("Approved: " + JSON.stringify(approved.map(x => x.number)));
       core.info("Unapproved: " + JSON.stringify(unapproved.map(x => x.number)));
 
-      if (approved.length > 1) {
+      if (approved.length < 1) {
         core.info("Pulls: " + JSON.stringify(pulls));
         throw new Error(`Unable to find any approved pull requests for project ${project}. You must have at least one approved pull request to pass project design.`);
       }
