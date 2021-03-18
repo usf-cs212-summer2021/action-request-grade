@@ -57,12 +57,13 @@ function calculateGrade(created, project, type) {
 }
 
 async function findIssues(octokit, project, type) {
-  core.info(`Looking up ${type.toLowerCase()} issues for project ${project}...`);
+  core.info(`Looking up issues for project ${project}...`);
 
   const labels = [`project${project}`];
 
   if (type) {
-    labels.push(type.toLowerCase);
+    labels.push(type.toLowerCase());
+    core.info(`Only including ${type.toLowerCase()} issues.`);
   }
 
   const result = await octokit.issues.listForRepo({
@@ -73,7 +74,7 @@ async function findIssues(octokit, project, type) {
   });
 
   if (result.status == 200) {
-    core.info(`Found ${result.data.length} issues for project ${project} ${type.toLowerCase()}.`);
+    core.info(`Found ${result.data.length} issues for project ${project}.`);
     return result.data;
   }
 
