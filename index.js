@@ -290,6 +290,9 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       let functionality = undefined;
 
       for (const issue of issues) {
+        // remove issue body (easier debugging)
+        delete issue.body;
+
         if (issue.title == title) { // make sure duplicate doesn't exist
           same = true;
           break;
@@ -341,12 +344,20 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
           pull_number: pull.number
         });
 
+        if (reviews.status != 200) {
+          core.info("Pull Request: " + JSON.stringify(pull));
+          core.info("Reviews: " + JSON.stringify(reviews));
+          core.warning(`Requesting review information failed.`);
+          continue;
+        }
+
         // save fetched data for output
-        pull.reviews = reviews;
+        pull.reviews = reviews.data;
 
         const approved = reviews.data.filter(x => x.state == "APPROVED" && x.user.login == "sjengle");
 
         core.info(JSON.stringify(approved));
+        core.info(approved.length);
 
         if (approved.length > 0) {
           approved.push(pull);
@@ -356,8 +367,8 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         }
       }
 
-      core.info(JSON.stringify(approved));
-      core.info(JSON.stringify(unapproved));
+      core.info("Approved: " + JSON.stringify(approved));
+      core.info("Unapproved: " + JSON.stringify(unapproved));
 
       core.startGroup('Handling project design grade request...');
 
