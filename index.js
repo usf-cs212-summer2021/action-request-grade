@@ -70,7 +70,9 @@ async function findIssues(octokit, project, type) {
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     labels: labels.join(','),
-    state: 'all'
+    state: 'all',
+    sort: 'created',
+    direction: 'asc'
   });
 
   if (result.status == 200) {
@@ -333,6 +335,8 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       core.info('');
       core.endGroup();
 
+      core.startGroup(`Finding project ${project} pull requests...`);
+
       // find all of the pull requests that were actually approved
       const approved = [];
       const unapproved = [];
@@ -348,18 +352,16 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
           core.info("Pull Request: " + JSON.stringify(pull));
           core.info("Reviews: " + JSON.stringify(reviews));
           core.warning(`Requesting review information failed.`);
+
+          // add to list of unapproved for now
+          unapproved.push(pull);
           continue;
         }
 
-        // save fetched data for output
-        pull.reviews = reviews.data;
+        const found = reviews.data.filter(x => x.state == "APPROVED" && x.user.login == "sjengle");
 
-        const approved = reviews.data.filter(x => x.state == "APPROVED" && x.user.login == "sjengle");
-
-        core.info(JSON.stringify(approved));
-        core.info(approved.length);
-
-        if (approved.length > 0) {
+        if (found.length > 0) {
+          pull.approved = found;
           approved.push(pull);
         }
         else {
@@ -367,8 +369,11 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         }
       }
 
-      core.info("Approved: " + JSON.stringify(approved));
-      core.info("Unapproved: " + JSON.stringify(unapproved));
+      core.info("Approved: " + JSON.stringify(approved.map(x => x.number)));
+      core.info("Unapproved: " + JSON.stringify(unapproved.map(x => x.number)));
+
+      core.info('');
+      core.endGroup();
 
       core.startGroup('Handling project design grade request...');
 
