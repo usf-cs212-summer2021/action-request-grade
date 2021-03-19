@@ -6,6 +6,8 @@ var { DateTime } = require('luxon');
 const constants = require('./constants.js');
 const utils = require('./utils.js');
 
+const zone = 'America/Los_Angeles';
+
 function getProject(release) {
   const regex = /^v([1-4])\.(\d+)\.(\d+)$/;
   const matched = release.match(regex);
@@ -21,7 +23,6 @@ function calculateGrade(created, project, type) {
   core.startGroup(`Calculating project ${project} ${type.toLowerCase()} grade...`);
 
   const results = {};
-  const zone = 'America/Los_Angeles';
   core.info(`\nSubmitted date: ${created}`);
 
   // all github timestamps are in ISO 8601 format
@@ -377,12 +378,11 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
           const version = pull.labels.map(x => x.name).filter(x => x.startsWith('v')).pop();
           const pulltype = pull.labels.map(x => x.name).filter(x => x.endsWith('chronous')).pop();
 
-          const zone = 'America/Los_Angeles';
           const createdDate = pull.created_at ? DateTime.fromISO(pull.created_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
           const approvedDate = pull.approved ? DateTime.fromISO(pull.approved.submitted_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
           const closedDate = pull.closed_at ? DateTime.fromISO(pull.closed_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
 
-          rows.push(`| [#${pull.number}](${pull.html_url}) | ${status} | ${version} | ${pulltype} | ${createdDate} | ${approvedDate} | ${closedDate} |`);
+          rows.push(`| [#${pull.number}](${pull.html_url}) | ${status} | \`${version}\` | ${pulltype} | ${createdDate} | ${approvedDate} | ${closedDate} |`);
         }
         else {
           unapproved.push(pull);
@@ -411,7 +411,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       const grade = calculateGrade(states.approvedDate, project, type);
 
       // -----------------------------------------------
-      core.startGroup(`Creating functionality issue...`);
+      core.startGroup(`Creating design issue...`);
 
       const body = `
 ## Student Information
@@ -429,7 +429,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
   - **Release:** [${states.release}](${states.releaseUrl})
   - **Release Verified:** [Run ${states.runNumber} (${states.runId})](${states.runUrl})
-  - **Release Created:** ${states.releaseDate}
+  - **Release Created:** ${DateTime.fromISO(states.releaseDate).setZone(zone).toLocaleString(DateTime.DATETIME_FULL)}
 
 ## Grade Information
 
