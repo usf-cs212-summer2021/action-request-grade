@@ -346,8 +346,8 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       const unapproved = [];
 
       const rows = [
-        '| Pull | Status | Version | Created | Approved | Closed |',
-        '|:----:|:------:|:-------:|:--------|:-------|:---------|'
+        '| Pull | Status | Version | Type | Created | Approved | Closed |',
+        '|:----:|:------:|:-------:|:-----|:--------|:---------|:-------|'
       ];
 
       for (const pull of pulls) {
@@ -375,13 +375,14 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
           const status = pull.draft ? 'draft' : pull.state;
           const version = pull.labels.map(x => x.name).filter(x => x.startsWith('v')).pop();
+          const pulltype = pull.labels.map(x => x.name).filter(x => x.endsWith('chronous')).pop();
 
           const zone = 'America/Los_Angeles';
           const createdDate = pull.created_at ? DateTime.fromISO(pull.created_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
           const approvedDate = pull.approved ? DateTime.fromISO(pull.approved.submitted_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
           const closedDate = pull.closed_at ? DateTime.fromISO(pull.closed_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
 
-          rows.push(`| [#${pull.number}](${pull.html_url}) | ${status} | ${version} | ${createdDate} | ${approvedDate} | ${closedDate} |`);
+          rows.push(`| [#${pull.number}](${pull.html_url}) | ${status} | ${version} | ${pulltype} | ${createdDate} | ${approvedDate} | ${closedDate} |`);
         }
         else {
           unapproved.push(pull);
@@ -390,8 +391,6 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
       core.info("Approved: " + JSON.stringify(approved.map(x => x.number)));
       core.info("Unapproved: " + JSON.stringify(unapproved.map(x => x.number)));
-
-      core.info(JSON.stringify(rows));
 
       if (approved.length < 1) {
         core.info("Pulls: " + JSON.stringify(pulls));
@@ -439,8 +438,17 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
 ## Approved Pull Requests
 
+${rows.join('\n')}
 
+## Extra Requests
+
+  - **Extra Issues:** ${extra.length > 0 ? extra.map(x => '#' + x.number).join(', ') : 'N/A'}
+  - **Extra Pull Requests:** ${unapproved.length > 0 ? unapproved.map(x => '#' + x.number).join(', ') : 'N/A'}
+
+${extra.length > 0 || unapproved.length > 0 ? ':warning: **Beware creating too many extra issues or pull requests for future projects!**' : ''}
       `;
+
+      core.info(body);
 
       /*
       Must already have functionality grade.
