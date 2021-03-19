@@ -330,6 +330,9 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         throw new Error(`Could not find an approved and locked functionality issue for project ${project}. If you have a functionality issue, contact the instructor or teacher assistant to make sure the issue is properly locked first.`);
       }
 
+      states.issueNumber = functionality.number;
+      states.issueUrl = functionality.html_url;
+
       core.info(`This appears to be the first project ${project} ${type.toLowerCase()} issue.`);
 
       core.info('');
@@ -341,6 +344,11 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       // find all of the pull requests that were actually approved
       const approved = [];
       const unapproved = [];
+
+      const rows = [
+        '| Pull | Status | Version | Created | Approved | Closed |',
+        '|:----:|:------:|:-------:|:--------|:-------|:---------|'
+      ];
 
       for (const pull of pulls) {
         const reviews = await octokit.pulls.listReviews({
@@ -364,6 +372,15 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         if (found.length > 0) {
           pull.approved = found[0];
           approved.push(pull);
+
+          const status = pull.draft ? 'draft' : pull.state;
+          const version = pull.labels.sort(sorter).map(x => x.name).filter(x => x.startsWith('v')).pop();
+
+          const createdDate = pull.created_at ? DateTime.fromISO(pull.created_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
+          const approvedDate = pull.approved ? DateTime.fromISO(pull.approved.submitted_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
+          const closedDate = pull.closed_at ? DateTime.fromISO(pull.closed_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
+
+          rows.push(`| [#${pull.number}](${pull.html_url}) | ${status} | ${version} | ${created} | ${approved} | ${closed} |`);
         }
         else {
           unapproved.push(pull);
@@ -373,6 +390,8 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       core.info("Approved: " + JSON.stringify(approved.map(x => x.number)));
       core.info("Unapproved: " + JSON.stringify(unapproved.map(x => x.number)));
 
+      core.info(JSON.stringify(rows));
+
       if (approved.length < 1) {
         core.info("Pulls: " + JSON.stringify(pulls));
         throw new Error(`Unable to find any approved pull requests for project ${project}. You must have at least one approved pull request to pass project design.`);
@@ -380,8 +399,6 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
       states.approvedPull = approved.length > 0 ? approved[0].number : 'N/A';
       states.approvedDate = approved.length > 0 ? approved[0].approved.submitted_at : 'N/A';
-
-      states.approvedDate = "2021-04-03T23:09:13Z";
 
       core.info('');
       core.info("First Approved Pull: " + states.approvedPull);
@@ -393,11 +410,36 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
       // -----------------------------------------------
       const grade = calculateGrade(states.approvedDate, project, type);
 
-      core.startGroup('Handling project design grade request...');
+      // -----------------------------------------------
+      core.startGroup(`Creating functionality issue...`);
 
-      core.info(JSON.stringify(approved));
-      core.info(JSON.stringify(functionality));
+      const body = `
+## Student Information
 
+  - **Full Name:** [FULL_NAME]
+  - **USF Email:** [USF_EMAIL]@usfca.edu
+
+## Project Information
+
+  - **Project:** Project ${project} ${constants.names[project]}
+  - **Project Functionality:** [Issue #${states.issueNumber}](${states.issueUrl})
+  - **${type} Deadline:** ${grade.deadline}
+
+## Release Information
+
+  - **Release:** [${states.release}](${states.releaseUrl})
+  - **Release Verified:** [Run ${states.runNumber} (${states.runId})](${states.runUrl})
+  - **Release Created:** ${states.releaseDate}
+
+## Grade Information
+
+  - **Late Penalty:** \`${grade.late * 10}\`
+  - **Project ${type} Grade:** \`${grade.grade}%\` (before deductions)
+
+## Approved Pull Requests
+
+
+      `;
 
       /*
       Must already have functionality grade.
@@ -428,6 +470,11 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
     // displays outside of group; always visible
     core.setFailed(`Unable to request project grade. ${error.message}`);
+  }
+  finally {
+    core.startGroup('Logging states...');
+    core.info(`states: ${JSON.stringify(states)}`);
+    core.endGroup();
   }
 }
 
