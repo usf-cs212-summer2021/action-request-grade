@@ -448,24 +448,15 @@ ${rows.join('\n')}
 ${extra.length > 0 || unapproved.length > 0 ? ':warning: **Beware creating too many extra issues or pull requests for future projects!**' : ''}
       `;
 
-      core.info(body);
+      const issue = await createIssue(octokit, project, type.toLowerCase(), title, body);
 
-      /*
-      Must already have functionality grade.
-      Must have a passing release.
-      List all approved pull requests.
-      List all extra pull requests with a warning.
-      Number, vLabel, Type Approved Date
-      Use first approved pull to calculate design grade.
-
-      */
-
-
-
-      throw new Error(`This action does not yet support design grades. Contact the instructor for details on how to proceed.`);
+      await updateIssue(octokit, issue, comment);
 
       core.info('');
       core.endGroup();
+
+      utils.showSuccess(`${type} issue #${issue.data.number} for project ${project} release ${states.release} created. Visit the issue for further instructions at: ${issue.data.html_url}`);
+      utils.showWarning(`Grade not yet updated! Visit the created issue for further instructions!`);
     }
     else {
       core.startGroup('Handling unknown request...');
