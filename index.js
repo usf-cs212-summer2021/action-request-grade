@@ -376,6 +376,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
           const status = pull.draft ? 'draft' : pull.state;
           const version = pull.labels.map(x => x.name).filter(x => x.startsWith('v')).pop();
 
+          const zone = 'America/Los_Angeles';
           const createdDate = pull.created_at ? DateTime.fromISO(pull.created_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
           const approvedDate = pull.approved ? DateTime.fromISO(pull.approved.submitted_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
           const closedDate = pull.closed_at ? DateTime.fromISO(pull.closed_at).setZone(zone).toLocaleString(DateTime.DATETIME_FULL) : 'N/A';
