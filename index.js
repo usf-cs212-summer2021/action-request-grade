@@ -472,11 +472,6 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
     // displays outside of group; always visible
     core.setFailed(`Unable to request project grade. ${error.message}`);
   }
-  finally {
-    core.startGroup('Logging states...');
-    core.info(`states: ${JSON.stringify(states)}`);
-    core.endGroup();
-  }
 }
 
 run();
