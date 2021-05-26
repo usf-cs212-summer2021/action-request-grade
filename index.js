@@ -35,19 +35,20 @@ function calculateGrade(created, project, type) {
   results.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);
   core.info(`Parsed ${type.toLowerCase()} deadline: ${results.deadline}`);
 
+  // TODO changed here
   if (createdDate < deadline) {
     core.info(`Submitted before deadline!`);
     results.late = 0;
   }
   else {
-    const days = createdDate.diff(deadline, 'days').toObject().days;
-    core.info(`Submitted ${days} day(s) late.`);
+    const hours = createdDate.diff(deadline, 'hours').toObject().hours;
+    core.info(`Submitted ${hours} hour(s) late.`);
 
-    results.late = 1 + Math.floor(days / 7.0);
-    core.info(`Submitted within ${results.late} week(s) late.`);
+    results.late = 1 + Math.floor(hours / 48.0);
+    core.info(`Using ${results.late}x late penalty multiplier.`);
   }
 
-  results.grade = 100 - (results.late * 10);
+  results.grade = 100 - (results.late * 5);
   core.info(`Project ${project} ${type.toLowerCase()} earned a ${results.grade}% grade (before deductions).`);
 
   core.info(JSON.stringify(results));
@@ -397,12 +398,13 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
         throw new Error(`Unable to find any approved pull requests for project ${project}. You must have at least one approved pull request to pass project design.`);
       }
 
-      states.approvedPull = approved.length > 0 ? approved[0].number : 'N/A';
-      states.approvedDate = approved.length > 0 ? approved[0].approved.submitted_at : 'N/A';
+      // TODO changed here
+      states.approvedPull = approved.length > 0 ? approved[approved.length - 1].number : 'N/A';
+      states.approvedDate = approved.length > 0 ? approved[approved.length - 1].approved.submitted_at : 'N/A';
 
       core.info('');
-      core.info("First Approved Pull: " + states.approvedPull);
-      core.info("First Approved Date: " + states.approvedDate);
+      core.info("Last Approved Pull: " + states.approvedPull);
+      core.info("Last Approved Date: " + states.approvedDate);
 
       core.info('');
       core.endGroup();

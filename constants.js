@@ -1,14 +1,14 @@
 exports.functionality = {
-  1: '2021-03-02',
-  2: '2021-03-30',
-  3: '2021-04-20',
-  4: '2021-05-11'
+  1: '2021-06-09',
+  2: '2021-06-16',
+  3: '2021-06-23',
+  4: '2021-06-30'
 };
 
 exports.design = {
-  1: '2021-03-26',
-  2: '2021-04-16',
-  3: '2021-05-07'
+  1: '2021-06-18',
+  2: '2021-06-25',
+  3: '2021-07-02'
 };
 
 exports.names = {
@@ -19,6 +19,6 @@ exports.names = {
 };
 
 exports.assign = {
-  functionality: 'josecorella',
-  design: 'josecorella'
+  functionality: 'sjengle',
+  design: 'sjengle'
 };
