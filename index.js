@@ -264,7 +264,7 @@ We will reply and lock this issue once the grade is updated on Canvas. If we do 
 
 ## Grade Information
 
-  - **Late Penalty:** \`${grade.late * 10}\`
+  - **Late Penalty:** \`${grade.late * 5}\`
   - **Project ${type} Grade:** \`${grade.grade}%\` (before deductions)
 
       `;
